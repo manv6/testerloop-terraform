@@ -21,6 +21,7 @@ module "vpc" {
   }
 }
 
+// Create the inbound and outbound security group rules
 resource "aws_security_group_rule" "testerloop-security-group-rule-inbound-sg" {
   type                     = "ingress"
   security_group_id        = module.vpc.default_security_group_id
@@ -60,6 +61,7 @@ resource "aws_security_group_rule" "testerloop-security-group-rule-outbound-ipv4
   protocol          = "-1"
   cidr_blocks       = ["0.0.0.0/0"]
 }
+
 
 // Create the s3 bucket
 resource "aws_s3_bucket" "testerloopS3Bucket" {
@@ -149,9 +151,9 @@ resource "aws_lambda_function" "testerloopLambdaFunction" {
   ]
   package_type = "Image"
   image_uri    = "168763042228.dkr.ecr.eu-west-3.amazonaws.com/cypress-lambda:latest" // @TODO change this to aws_ecr_repository.testerloopECRRepository.repository_url
-  memory_size  = 3004
+  memory_size  = 4096
   role         = aws_iam_role.testerloopLambdaCypressRole.arn
-  timeout      = 540
+  timeout      = 600
 
   tracing_config {
     mode = "PassThrough"
