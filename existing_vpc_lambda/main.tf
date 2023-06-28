@@ -305,7 +305,7 @@ resource "aws_lambda_function" "testerloopLambdaFunction" {
     "x86_64"
   ]
   package_type = "Image"
-  image_uri    = "168763042228.dkr.ecr.eu-west-3.amazonaws.com/cypress-lambda:latest" //"${aws_ecr_repository.testerloop-lambda-ecr-repository.repository_url}:latest"
+  image_uri    = "${aws_ecr_repository.testerloop-lambda-ecr-repository.repository_url}:latest"
   memory_size  = 4096
   role         = aws_iam_role.testerloopLambdaCypressRole.arn
   timeout      = 600
