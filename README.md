@@ -1,5 +1,7 @@
 # Testerloop Terraform Scripts
 
+Disclaimer: This guide assumes that the user has knowledge of `AWS web services` and `Terraform`
+
 ## Description
 
 - Basic Lambda: Creates a VPC and all the relevant resources from scratch
@@ -33,6 +35,8 @@ Requirements:
 
 # Option 2: Existing VPC
 
+Note: This option assumes that there is already an existing VPC, a security group, an internet gateway and an available Elastic Ip address. `If no security group is found one will be created`.
+Similarly you can specify an elastic Ip address by providing the id in the main.tf file
 Requirements:
 
 - AWS Credentials
