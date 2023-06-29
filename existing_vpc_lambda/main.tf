@@ -11,7 +11,7 @@ variable "elastic_ip_address" {
 }
 
 
-# // Create the ecr repository
+// Create the ecr repository
 resource "aws_ecr_repository" "testerloop-lambda-ecr-repository" {
   name = "testerloop-lambda-ecr-repository"
 }
@@ -45,9 +45,9 @@ locals {
 // Create a new ig or skip if there is already an existing
 variable "skip_instance_creation" { default = true }
 
-# Internet Gateway for Public Subnet
+// Internet Gateway for Public Subnet
 resource "aws_internet_gateway" "testerloop-igw" {
-  # Conditional dependency on the existence of an internet gateway
+  // Conditional dependency on the existence of an internet gateway
   count = var.skip_instance_creation && !local.internet_gateway_exists ? 1 : 0
 
   depends_on = [data.aws_internet_gateway.existing]
@@ -74,7 +74,7 @@ locals {
 
 
 
-# NAT
+// NAT
 resource "aws_nat_gateway" "testerloop-nat" {
   allocation_id = local.assinged_eip
   subnet_id     = element(aws_subnet.testerloop-public-subnet.*.id, 0)
@@ -85,7 +85,7 @@ resource "aws_nat_gateway" "testerloop-nat" {
   }
 }
 
-# Public subnet
+// Public subnet
 resource "aws_subnet" "testerloop-public-subnet" {
   vpc_id                  = var.vpc_id
   count                   = length(var.public_subnet_cidr_blocks)
@@ -99,7 +99,7 @@ resource "aws_subnet" "testerloop-public-subnet" {
   }
 }
 
-# Private Subnet
+// Private Subnet
 resource "aws_subnet" "testerloop-private-subnet" {
   vpc_id                  = var.vpc_id
   count                   = length(var.private_subnet_cidr_blocks)
@@ -113,7 +113,7 @@ resource "aws_subnet" "testerloop-private-subnet" {
   }
 }
 
-# Routing tables to route traffic for Private Subnet
+// Routing tables to route traffic for Private Subnet
 resource "aws_route_table" "private" {
   vpc_id = var.vpc_id
 
@@ -123,7 +123,7 @@ resource "aws_route_table" "private" {
   }
 }
 
-# Routing tables to route traffic for Public Subnet
+// Routing tables to route traffic for Public Subnet
 resource "aws_route_table" "public" {
   vpc_id = var.vpc_id
 
@@ -133,18 +133,16 @@ resource "aws_route_table" "public" {
   }
 }
 
-# Route for Internet Gateway
-resource "aws_route" "public_internet_gateway" {
-  # Conditional dependency on the existence of an internet gateway
-  # count      = !local.internet_gateway_exists ? 1 : 0
-  depends_on = [data.aws_internet_gateway.existing]
-
+// Route for Internet Gateway
+resource "aws_route" "public_internet_lambda" {
+  // Conditional dependency on the existence of an internet gateway
+  depends_on             = [data.aws_internet_gateway.existing]
   route_table_id         = aws_route_table.public.id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = data.aws_internet_gateway.existing.id
 }
 
-# Route for NAT
+// Route for NAT
 resource "aws_route" "private_nat_gateway" {
   route_table_id         = aws_route_table.private.id
   destination_cidr_block = "0.0.0.0/0"
@@ -152,7 +150,7 @@ resource "aws_route" "private_nat_gateway" {
 }
 
 
-# Route table associations for both Public & Private Subnets
+// Route table associations for both Public & Private Subnets
 resource "aws_route_table_association" "public" {
   count          = length(var.public_subnet_cidr_blocks)
   subnet_id      = element(aws_subnet.testerloop-public-subnet.*.id, count.index)
@@ -170,7 +168,7 @@ data "aws_security_group" "existing_sg" {
   vpc_id = var.vpc_id
 }
 
-# Default Security Group of VPC
+// Default Security Group of VPC
 resource "aws_security_group" "testerloop-sg" {
   // Skip creating a new security group if already exists
   count       = length(data.aws_security_group.existing_sg.id) > 0 ? 0 : 1
@@ -234,14 +232,14 @@ resource "aws_security_group_rule" "testerloop-security-group-rule-outbound-ipv4
 }
 
 
-# // Create the s3 bucket
+// Create the s3 bucket
 resource "aws_s3_bucket" "testerloopS3Bucket" {
   bucket = var.bucketName
 }
 
 
 
-# // Create the service role for the lambda
+// Create the service role for the lambda
 resource "aws_iam_role" "testerloopLambdaCypressRole" {
   path                 = "/service-role/"
   name                 = "testerloop-cypress-lambda-role"
@@ -250,7 +248,7 @@ resource "aws_iam_role" "testerloopLambdaCypressRole" {
   tags                 = {}
 }
 
-# // Create the policy to write to s3
+// Create the policy to write to s3
 resource "aws_iam_role_policy" "testerloopWriteResultsToS3Policy" {
   name   = "TesterloopS3WriteResultsPolicy"
   policy = <<EOF
@@ -278,7 +276,7 @@ EOF
   role   = aws_iam_role.testerloopLambdaCypressRole.name
 }
 
-# // Create the policy to allow the lambda to attach to the VPC
+// Create the policy to allow the lambda to attach to the VPC
 resource "aws_iam_role_policy" "testerloopEnableLambdaToAttachVpcPolicy" {
   name   = "LambdaVPCAccessExecutionPolicy"
   policy = <<EOF
@@ -310,7 +308,7 @@ EOF
   role   = aws_iam_role.testerloopLambdaCypressRole.name
 }
 
-# // Create the lalmbda function
+// Create the lambda function
 resource "aws_lambda_function" "testerloopLambdaFunction" {
   depends_on  = [data.aws_security_group.existing_sg, aws_subnet.testerloop-public-subnet, aws_subnet.testerloop-private-subnet]
   description = "Lambda function for executing the Testerloop tests"
@@ -329,7 +327,7 @@ resource "aws_lambda_function" "testerloopLambdaFunction" {
     mode = "PassThrough"
   }
   vpc_config {
-    subnet_ids = [aws_subnet.testerloop-private-subnet[0].id, aws_subnet.testerloop-public-subnet[0].id]
+    subnet_ids = [aws_subnet.testerloop-private-subnet[0].id]
     security_group_ids = [
       local.selected_sg.id
     ]
