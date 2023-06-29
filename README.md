@@ -4,8 +4,12 @@ Disclaimer: This guide assumes that the user has knowledge of `AWS web services`
 
 ## Description
 
-- Basic Lambda: Creates a VPC and all the relevant resources from scratch
-- Existing VPC Lambda: Attaches to an already existing VPC
+What's included:
+
+- basic_lambda: Creates a VPC and all the relevant resources from scratch
+- existing_vpc_lambda: Attaches to an already existing VPC
+- lambda_Dockerfile: Template to place in your test codebase
+- lambda handler.js: Template to place in your test codebase inside a 'lambda' directory as index.js
 
 # How to use
 
