@@ -3,6 +3,7 @@ variable "public_subnet_cidr_blocks" {}
 variable "private_subnet_cidr_blocks" {}
 variable "avail_zones" {}
 variable "aws_region" {}
+variable "bucketName" {}
 variable "npm_token" {}
 
 module "vpc" {
@@ -43,6 +44,7 @@ resource "null_resource" "docker_build_and_push" {
 
 // Create the inbound and outbound security group rules
 resource "aws_security_group_rule" "testerloop-security-group-rule-inbound-sg" {
+  depends_on               = [module.vpc]
   type                     = "ingress"
   security_group_id        = module.vpc.default_security_group_id
   description              = "Allow all inbound traffic from the security group"
@@ -53,6 +55,7 @@ resource "aws_security_group_rule" "testerloop-security-group-rule-inbound-sg" {
 }
 
 resource "aws_security_group_rule" "testerloop-security-group-rule-inbound-ipv4" {
+  depends_on        = [aws_security_group_rule.testerloop-security-group-rule-inbound-sg]
   type              = "ingress"
   security_group_id = module.vpc.default_security_group_id
   description       = "Allow all inbound traffic"
@@ -63,6 +66,7 @@ resource "aws_security_group_rule" "testerloop-security-group-rule-inbound-ipv4"
 }
 
 resource "aws_security_group_rule" "testerloop-security-group-rule-outbound-sg" {
+  depends_on               = [aws_security_group_rule.testerloop-security-group-rule-inbound-ipv4]
   type                     = "egress"
   security_group_id        = module.vpc.default_security_group_id
   description              = "Allow all outbound traffic from the security group"
@@ -73,6 +77,7 @@ resource "aws_security_group_rule" "testerloop-security-group-rule-outbound-sg" 
 }
 
 resource "aws_security_group_rule" "testerloop-security-group-rule-outbound-ipv4" {
+  depends_on        = [aws_security_group_rule.testerloop-security-group-rule-outbound-sg]
   type              = "egress"
   security_group_id = module.vpc.default_security_group_id
   description       = "Allow all outbound traffic"
@@ -85,7 +90,7 @@ resource "aws_security_group_rule" "testerloop-security-group-rule-outbound-ipv4
 
 // Create the s3 bucket
 resource "aws_s3_bucket" "testerloopS3Bucket" {
-  bucket = "testerloop-tests-results-test-hd1"
+  bucket = var.bucketName
 }
 
 
@@ -161,7 +166,7 @@ EOF
 
 // Create the lalmbda function
 resource "aws_lambda_function" "testerloopLambdaFunction" {
-  depends_on  = [null_resource.docker_build_and_push]
+  #   depends_on  = [null_resource.docker_build_and_push]
   description = "Lambda function for executing the Testerloop tests"
 
   function_name = "testerloop-cypress-lambda"
@@ -170,7 +175,7 @@ resource "aws_lambda_function" "testerloopLambdaFunction" {
   ]
   package_type = "Image"
   image_uri    = "${aws_ecr_repository.testerloop-lambda-ecr-repository.repository_url}:latest"
-  memory_size  = 4096
+  memory_size  = 3008
   role         = aws_iam_role.testerloopLambdaCypressRole.arn
   timeout      = 600
 
@@ -178,7 +183,7 @@ resource "aws_lambda_function" "testerloopLambdaFunction" {
     mode = "PassThrough"
   }
   vpc_config {
-    subnet_ids = [module.vpc.public_subnets[0], module.vpc.private_subnets[0]]
+    subnet_ids = [module.vpc.private_subnets[0]]
     security_group_ids = [
       module.vpc.default_security_group_id
     ]

@@ -1,6 +1,7 @@
-public_subnet_cidr_blocks  = ["11.0.0.0/24"]
-private_subnet_cidr_blocks = ["11.0.0.0/24"]
-avail_zones                = ["eu-west-3a"]
-aws_region                 = "eu-west-3"
+public_subnet_cidr_blocks  = ["10.0.0.0/24"]
+private_subnet_cidr_blocks = ["10.0.1.0/24"]
+avail_zones                = ["eu-west-1a"]
+aws_region                 = "eu-west-1"
 npm_token                  = ""
-vpc_id                     = "vpc-08441bd124d05b3fd"
+bucketName                 = "testerloop-tests-results-hellas-direct"
+vpc_id                     = ""

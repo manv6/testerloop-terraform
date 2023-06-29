@@ -4,16 +4,31 @@ variable "avail_zones" {}
 variable "aws_region" {}
 variable "npm_token" {}
 variable "vpc_id" {}
+variable "bucketName" {}
 variable "elastic_ip_address" {
   type    = string
   default = null
 }
 
 
-// Create the ecr repository
+# // Create the ecr repository
 resource "aws_ecr_repository" "testerloop-lambda-ecr-repository" {
   name = "testerloop-lambda-ecr-repository"
 }
+
+// Build and push the docker image to be used by the lambda
+resource "null_resource" "docker_build_and_push" {
+  depends_on = [aws_ecr_repository.testerloop-lambda-ecr-repository]
+  provisioner "local-exec" {
+    command = <<EOT
+                 aws ecr get-login-password --region ${var.aws_region} | 
+                 docker login --username AWS --password-stdin ${aws_ecr_repository.testerloop-lambda-ecr-repository.repository_url} && 
+                 docker build --build-arg NPM_TOKEN=${var.npm_token} -t ${aws_ecr_repository.testerloop-lambda-ecr-repository.repository_url}:latest -f Dockerfile . &&
+                 docker push ${aws_ecr_repository.testerloop-lambda-ecr-repository.repository_url}:latest 
+                 EOT
+  }
+}
+
 
 // Check for existing internet gateway
 data "aws_internet_gateway" "existing" {
@@ -221,7 +236,7 @@ resource "aws_security_group_rule" "testerloop-security-group-rule-outbound-ipv4
 
 # // Create the s3 bucket
 resource "aws_s3_bucket" "testerloopS3Bucket" {
-  bucket = "testerloop-tests-results-test-hd1"
+  bucket = var.bucketName
 }
 
 
@@ -306,7 +321,7 @@ resource "aws_lambda_function" "testerloopLambdaFunction" {
   ]
   package_type = "Image"
   image_uri    = "${aws_ecr_repository.testerloop-lambda-ecr-repository.repository_url}:latest"
-  memory_size  = 4096
+  memory_size  = 3008
   role         = aws_iam_role.testerloopLambdaCypressRole.arn
   timeout      = 600
 
